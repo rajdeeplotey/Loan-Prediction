@@ -12,6 +12,7 @@ from flask import Flask, render_template, request, jsonify, flash, redirect, url
 import joblib
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
@@ -92,15 +93,23 @@ def load_model():
     """
     global model
     try:
-        model_path = os.path.join('models', 'loan_model.pkl')
-        if not os.path.exists(model_path):
+        # Use absolute path for cross-platform compatibility
+        base_dir = Path(__file__).parent
+        model_path = base_dir / 'models' / 'loan_model.pkl'
+        
+        if not model_path.exists():
             raise FileNotFoundError(f"Model file not found at {model_path}")
         
+        logger.info(f"Loading model from: {model_path}")
         model = joblib.load(model_path)
         logger.info("Model loaded successfully")
+        logger.info(f"Model type: {type(model)}")
+        logger.info(f"Model expected features: {model.n_features_in_ if hasattr(model, 'n_features_in_') else 'unknown'}")
         return model
     except Exception as e:
         logger.error(f"Error loading model: {str(e)}")
+        logger.error(f"Current working directory: {os.getcwd()}")
+        logger.error(f"Script location: {Path(__file__).parent}")
         raise
 
 
@@ -117,15 +126,22 @@ def load_columns():
     """
     global columns
     try:
-        columns_path = os.path.join('models', 'columns.pkl')
-        if not os.path.exists(columns_path):
+        # Use absolute path for cross-platform compatibility
+        base_dir = Path(__file__).parent
+        columns_path = base_dir / 'models' / 'columns.pkl'
+        
+        if not columns_path.exists():
             raise FileNotFoundError(f"Columns file not found at {columns_path}")
         
+        logger.info(f"Loading columns from: {columns_path}")
         columns = joblib.load(columns_path)
         logger.info(f"Columns loaded successfully: {len(columns)} columns")
+        logger.info(f"Column names: {columns}")
         return columns
     except Exception as e:
         logger.error(f"Error loading columns: {str(e)}")
+        logger.error(f"Current working directory: {os.getcwd()}")
+        logger.error(f"Script location: {Path(__file__).parent}")
         raise
 
 
@@ -250,6 +266,11 @@ def prepare_input_data(form_data):
         loan_term_years = int(form_data.get('loan_term_years', 30))
         loan_term_months = loan_term_years * 12
         
+        # Get numeric values
+        applicant_income = float(form_data.get('applicant_income', 0))
+        coapplicant_income = float(form_data.get('coapplicant_income', 0))
+        loan_amount = float(form_data.get('loan_amount', 0))
+        
         # Create a dictionary with the exact column names expected by the model
         # These should match the training data column names
         input_dict = {
@@ -258,9 +279,9 @@ def prepare_input_data(form_data):
             'Dependents': [form_data.get('dependents', '0')],
             'Education': [form_data.get('education', 'Graduate')],
             'Self_Employed': [form_data.get('self_employed', 'No')],
-            'ApplicantIncome': [float(form_data.get('applicant_income', 0))],
-            'CoapplicantIncome': [float(form_data.get('coapplicant_income', 0))],
-            'LoanAmount': [float(form_data.get('loan_amount', 0))],
+            'ApplicantIncome': [applicant_income],
+            'CoapplicantIncome': [coapplicant_income],
+            'LoanAmount': [loan_amount],
             'Loan_Amount_Term': [float(loan_term_months)],
             'Credit_History': [int(form_data.get('credit_history', 1))],
             'Property_Area': [form_data.get('property_area', 'Urban')]
@@ -284,12 +305,26 @@ def prepare_input_data(form_data):
         input_array = input_df_encoded.values
         logger.info(f"Converted to numpy array: {input_array.shape}")
         
+        # Validate feature count matches model expectations
+        if model is not None and hasattr(model, 'n_features_in_'):
+            expected_features = model.n_features_in_
+            actual_features = input_array.shape[1]
+            if expected_features != actual_features:
+                logger.error(f"FEATURE COUNT MISMATCH: Model expects {expected_features} features but input has {actual_features} features")
+                logger.error(f"Expected features from model: {expected_features}")
+                logger.error(f"Actual features from input: {actual_features}")
+                logger.error(f"Columns file has: {len(columns)} features")
+                logger.error(f"Input columns: {input_df_encoded.columns.tolist()}")
+                raise ValueError(f"Feature count mismatch: Model expects {expected_features} features but input has {actual_features} features")
+        
         logger.info(f"Input data prepared successfully. Shape: {input_array.shape}")
         return input_array
         
     except Exception as e:
         logger.error(f"Error preparing input data: {str(e)}")
         logger.error(f"Form data: {form_data}")
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error details: {str(e)}", exc_info=True)
         raise
 
 
@@ -847,11 +882,26 @@ def initialize_app():
     This function is called when the application starts.
     """
     try:
+        logger.info("Starting application initialization...")
         load_model()
         load_columns()
+        
+        # Validate model and columns compatibility
+        if model is not None and columns is not None:
+            if hasattr(model, 'n_features_in_'):
+                model_features = model.n_features_in_
+                columns_features = len(columns)
+                logger.info(f"Model expects {model_features} features, columns file has {columns_features} features")
+                
+                if model_features != columns_features:
+                    logger.error(f"FEATURE COUNT MISMATCH: Model expects {model_features} features but columns file has {columns_features} features")
+                    raise ValueError(f"Feature count mismatch: Model expects {model_features} features but columns file has {columns_features} features")
+        
         logger.info("Application initialized successfully")
     except Exception as e:
         logger.error(f"Application initialization failed: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error details: {str(e)}", exc_info=True)
         raise
 
 

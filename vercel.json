@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.py"
+    }
+  ],
+  "env": {
+    "SECRET_KEY": {
+      "description": "Secret key for Flask session encryption"
+    },
+    "DEBUG": {
+      "description": "Debug mode for Flask"
+    }
+  },
+  "buildCommand": "pip install -r requirements.txt",
+  "outputDirectory": "."
+}
