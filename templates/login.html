@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="glass-card" data-aos="fade-up">
+                <div class="text-center mb-4">
+                    <div class="feature-icon mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                        <i class="fas fa-sign-in-alt"></i>
+                    </div>
+                    <h2 class="mb-2">Welcome Back</h2>
+                    <p class="text-muted">Login to your LoanAI account</p>
+                </div>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form action="{{ url_for('login') }}" method="POST" data-validate="true">
+                    <div class="form-section">
+                        <div class="form-group mb-3">
+                            <label for="email" class="form-label">Email Address *</label>
+                            <input type="email" class="form-control" id="email" name="email" required
+                                   placeholder="Enter your email address">
+                            <div class="error-message text-danger mt-1" style="display: none;"></div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="password" class="form-label">Password *</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" required
+                                       placeholder="Enter your password">
+                                <button type="button" class="btn btn-outline-secondary password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="error-message text-danger mt-1" style="display: none;"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                                <label class="form-check-label" for="remember">
+                                    Remember me
+                                </label>
+                            </div>
+                            <a href="{{ url_for('forgot_password') }}" class="text-primary">Forgot Password?</a>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </button>
+                    
+                    <div class="text-center mb-3">
+                        <p class="text-muted mb-2">Or login with</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-outline-secondary">
+                                <i class="fab fa-google me-2"></i>Google
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary">
+                                <i class="fab fa-linkedin me-2"></i>LinkedIn
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p class="mb-0">Don't have an account? <a href="{{ url_for('register') }}" class="text-primary">Register here</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

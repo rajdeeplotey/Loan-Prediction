@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Result Card -->
+            <div class="result-card {{ 'approved' if result.loan_status == 'Approved' else 'rejected' }}" data-aos="zoom-in">
+                <div class="result-icon">
+                    <i class="fas {{ 'fa-check-circle' if result.loan_status == 'Approved' else 'fa-times-circle' }}"></i>
+                </div>
+                <h2 class="result-status">{{ result.loan_status }}</h2>
+                <p class="result-confidence">Confidence: {{ result.confidence }}</p>
+                <p class="result-risk">Risk Level: {{ result.risk_level }}</p>
+                <p class="recommendation">{{ result.recommendation }}</p>
+                <p class="timestamp"><i class="fas fa-clock me-2"></i>Prediction Time: {{ result.timestamp }}</p>
+            </div>
+            
+            <!-- Approval Factors -->
+            <div class="glass-card mb-4" data-aos="fade-up" data-aos-delay="100">
+                <h4 class="mb-4"><i class="fas fa-check-circle me-2 text-success"></i>Approval Factors</h4>
+                {% if result.approval_factors %}
+                    <div class="factors-list">
+                        {% for factor in result.approval_factors %}
+                            <div class="factor-item approval-factor">
+                                <i class="fas fa-check me-2"></i>{{ factor }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No significant approval factors identified.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Risk Factors -->
+            <div class="glass-card mb-4" data-aos="fade-up" data-aos-delay="200">
+                <h4 class="mb-4"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Risk Factors</h4>
+                {% if result.risk_factors %}
+                    <div class="factors-list">
+                        {% for factor in result.risk_factors %}
+                            <div class="factor-item risk-factor">
+                                <i class="fas fa-exclamation me-2"></i>{{ factor }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No significant risk factors identified.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Applicant Summary -->
+            <div class="glass-card mb-4" data-aos="fade-up" data-aos-delay="300">
+                <h4 class="mb-4"><i class="fas fa-user me-2"></i>Applicant Summary</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Gender:</strong> {{ result.form_data.gender }}</p>
+                        <p><strong>Marital Status:</strong> {{ result.form_data.married }}</p>
+                        <p><strong>Dependents:</strong> {{ result.form_data.dependents }}</p>
+                        <p><strong>Education:</strong> {{ result.form_data.education }}</p>
+                        <p><strong>Self Employed:</strong> {{ result.form_data.self_employed }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Applicant Income:</strong> ₹{{ result.form_data.applicant_income }}</p>
+                        <p><strong>Coapplicant Income:</strong> ₹{{ result.form_data.coapplicant_income }}</p>
+                        <p><strong>Loan Amount:</strong> ₹{{ result.form_data.loan_amount }}</p>
+                        <p><strong>Loan Term:</strong> {{ result.form_data.loan_term_years }} Years</p>
+                        <p><strong>Property Area:</strong> {{ result.form_data.property_area }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="text-center" data-aos="fade-up" data-aos-delay="400">
+                <a href="{{ url_for('loan_prediction') }}" class="btn btn-primary btn-lg me-2">
+                    <i class="fas fa-redo me-2"></i>New Prediction
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-chart-line me-2"></i>View Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.factors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.factor-item {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.approval-factor {
+    background: linear-gradient(135deg, rgba(17, 153, 142, 0.1) 0%, rgba(56, 239, 125, 0.1) 100%);
+    border: 1px solid rgba(56, 239, 125, 0.3);
+    color: #11998e;
+}
+
+.risk-factor {
+    background: linear-gradient(135deg, rgba(235, 51, 73, 0.1) 0%, rgba(244, 92, 67, 0.1) 100%);
+    border: 1px solid rgba(244, 92, 67, 0.3);
+    color: #eb3349;
+}
+</style>
+{% endblock %}

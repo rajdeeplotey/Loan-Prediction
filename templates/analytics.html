@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header" data-aos="fade-up">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">Analytics Dashboard</h1>
+                    <p class="text-muted mb-0">Comprehensive insights into loan applications and predictions</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-primary" onclick="loadAnalytics()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-4" id="statsCards">
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="0">
+                <div class="dashboard-card">
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-value" id="totalPredictions">0</div>
+                        <div class="dashboard-stat-label">Total Predictions</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="dashboard-card">
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-value text-success" id="approvedCount">0</div>
+                        <div class="dashboard-stat-label">Approved</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="dashboard-card">
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-value text-danger" id="rejectedCount">0</div>
+                        <div class="dashboard-stat-label">Rejected</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="dashboard-card">
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-value text-info" id="avgConfidence">0%</div>
+                        <div class="dashboard-stat-label">Avg Confidence</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="glass-card">
+                    <h4 class="mb-4">Approval vs Rejection</h4>
+                    <div class="chart-container">
+                        <canvas id="approvalChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-up" data-aos-delay="500">
+                <div class="glass-card">
+                    <h4 class="mb-4">Risk Distribution</h4>
+                    <div class="chart-container">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rate Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6" data-aos="fade-up" data-aos-delay="600">
+                <div class="glass-card">
+                    <h4 class="mb-4">Approval Rate</h4>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" id="approvalRateBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p class="text-center mt-3"><span id="approvalRateText">0%</span> Approval Rate</p>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-up" data-aos-delay="700">
+                <div class="glass-card">
+                    <h4 class="mb-4">Rejection Rate</h4>
+                    <div class="progress">
+                        <div class="progress-bar bg-danger" id="rejectionRateBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p class="text-center mt-3"><span id="rejectionRateText">0%</span> Rejection Rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Load analytics data from API
+async function loadAnalytics() {
+    try {
+        const response = await fetch('/api/analytics');
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error loading analytics:', data.error);
+            return;
+        }
+        
+        // Update stats cards
+        document.getElementById('totalPredictions').textContent = data.total_predictions;
+        document.getElementById('approvedCount').textContent = data.approved;
+        document.getElementById('rejectedCount').textContent = data.rejected;
+        document.getElementById('avgConfidence').textContent = data.average_confidence.toFixed(1) + '%';
+        
+        // Update rate bars
+        document.getElementById('approvalRateBar').style.width = data.approval_rate + '%';
+        document.getElementById('approvalRateText').textContent = data.approval_rate.toFixed(1) + '%';
+        document.getElementById('rejectionRateBar').style.width = data.rejection_rate + '%';
+        document.getElementById('rejectionRateText').textContent = data.rejection_rate.toFixed(1) + '%';
+        
+        // Update charts
+        updateCharts(data);
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+    }
+}
+
+// Update charts with data
+function updateCharts(data) {
+    // Approval vs Rejection Chart
+    const approvalCtx = document.getElementById('approvalChart').getContext('2d');
+    if (window.approvalChart) {
+        window.approvalChart.destroy();
+    }
+    window.approvalChart = new Chart(approvalCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Approved', 'Rejected'],
+            datasets: [{
+                data: [data.approved, data.rejected],
+                backgroundColor: ['#28a745', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Risk Distribution Chart
+    const riskCtx = document.getElementById('riskChart').getContext('2d');
+    if (window.riskChart) {
+        window.riskChart.destroy();
+    }
+    window.riskChart = new Chart(riskCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                label: 'Count',
+                data: [data.risk_distribution.low_risk, data.risk_distribution.medium_risk, data.risk_distribution.high_risk],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Load analytics on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalytics();
+});
+</script>
+{% endblock %}

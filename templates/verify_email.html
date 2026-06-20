@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="glass-card" data-aos="fade-up">
+                <div class="text-center mb-4">
+                    <div class="feature-icon mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                        <i class="fas fa-envelope-open-text"></i>
+                    </div>
+                    <h2 class="mb-2">Verify Your Email</h2>
+                    <p class="text-muted">We've sent a verification code to your email</p>
+                </div>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form action="{{ url_for('verify_email') }}" method="POST" data-validate="true">
+                    <div class="form-section">
+                        <h3><i class="fas fa-shield-alt me-2"></i>Enter Verification Code</h3>
+                        
+                        <div class="form-group mb-3">
+                            <label for="otp" class="form-label">OTP Code *</label>
+                            <input type="text" class="form-control text-center" id="otp" name="otp" required
+                                   placeholder="Enter 6-digit code" maxlength="6" style="font-size: 1.5rem; letter-spacing: 0.5rem;">
+                            <div class="error-message text-danger mt-1" style="display: none;"></div>
+                        </div>
+                        
+                        <div class="text-center mb-3">
+                            <p class="text-muted">
+                                Code expires in: <span id="countdown" data-countdown="300" class="fw-bold text-primary">5:00</span>
+                            </p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <p class="text-muted">Didn't receive the code?</p>
+                            <button type="button" id="resendBtn" class="btn btn-link text-primary" disabled>
+                                <i class="fas fa-redo me-1"></i>Resend Code
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                        <i class="fas fa-check-circle me-2"></i>Verify Email
+                    </button>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('login') }}" class="text-muted">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Login
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

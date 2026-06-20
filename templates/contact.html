@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="glass-card mb-4" data-aos="fade-up">
+                <div class="text-center mb-4">
+                    <h2 class="mb-2"><i class="fas fa-envelope me-2"></i>Contact Us</h2>
+                    <p class="text-muted">Have questions? We'd love to hear from you.</p>
+                </div>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form action="{{ url_for('contact') }}" method="POST" data-validate="true">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required
+                                       placeholder="Enter your full name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required
+                                       placeholder="Enter your email address">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="subject" class="form-label">Subject *</label>
+                        <select class="form-select" id="subject" name="subject" required>
+                            <option value="">Select a subject</option>
+                            <option value="general">General Inquiry</option>
+                            <option value="support">Technical Support</option>
+                            <option value="billing">Billing Question</option>
+                            <option value="partnership">Partnership Opportunity</option>
+                            <option value="feedback">Feedback</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="message" class="form-label">Message *</label>
+                        <textarea class="form-control" id="message" name="message" rows="6" required
+                                  placeholder="Write your message here..."></textarea>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+                            <label class="form-check-label" for="newsletter">
+                                Subscribe to our newsletter for updates
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane me-2"></i>Send Message
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Google Maps Section -->
+            <div class="glass-card" data-aos="fade-up" data-aos-delay="100">
+                <h4 class="mb-4"><i class="fas fa-map-marker-alt me-2"></i>Our Location</h4>
+                <div class="ratio ratio-21x9">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.1841337465!2d-73.9856566845941!3d40.74844057932847!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259a9b3117469%3A0xd134e199a405a163!2sEmpire%20State%20Building!5e0!3m2!1sen!2sus!4v1635959481000!5m2!1sen!2sus" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Contact Information -->
+            <div class="contact-info-card" data-aos="fade-left" data-aos-delay="0">
+                <div class="contact-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <h5>Address</h5>
+                <p class="text-muted mb-0">123 Finance Street<br>Business District<br>New York, NY 10001</p>
+            </div>
+            
+            <div class="contact-info-card" data-aos="fade-left" data-aos-delay="100">
+                <div class="contact-icon">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <h5>Phone</h5>
+                <p class="text-muted mb-0">
+                    <a href="tel:+15551234567" class="text-muted">+1 (555) 123-4567</a><br>
+                    <small>Mon-Fri 9AM-6PM EST</small>
+                </p>
+            </div>
+            
+            <div class="contact-info-card" data-aos="fade-left" data-aos-delay="200">
+                <div class="contact-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <h5>Email</h5>
+                <p class="text-muted mb-0">
+                    <a href="mailto:support@loanai.com" class="text-muted">support@loanai.com</a><br>
+                    <small>We respond within 24 hours</small>
+                </p>
+            </div>
+            
+            <!-- Business Hours -->
+            <div class="glass-card mb-4" data-aos="fade-left" data-aos-delay="300">
+                <h4 class="mb-3"><i class="fas fa-clock me-2"></i>Business Hours</h4>
+                <ul class="list-unstyled mb-0">
+                    <li class="d-flex justify-content-between mb-2">
+                        <span>Monday - Friday</span>
+                        <span>9:00 AM - 6:00 PM</span>
+                    </li>
+                    <li class="d-flex justify-content-between mb-2">
+                        <span>Saturday</span>
+                        <span>10:00 AM - 4:00 PM</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span>Sunday</span>
+                        <span>Closed</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Social Media -->
+            <div class="glass-card mb-4" data-aos="fade-left" data-aos-delay="400">
+                <h4 class="mb-3"><i class="fas fa-share-alt me-2"></i>Follow Us</h4>
+                <div class="social-links justify-content-center">
+                    <a href="#" class="text-white"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-white"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            
+            <!-- FAQ Link -->
+            <div class="glass-card" data-aos="fade-left" data-aos-delay="500">
+                <h4 class="mb-3"><i class="fas fa-question-circle me-2"></i>Have Questions?</h4>
+                <p class="text-muted mb-3">Check out our FAQ section for quick answers to common questions.</p>
+                <a href="{{ url_for('index') }}#faq" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-book me-2"></i>View FAQ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="profile-header" data-aos="fade-down">
+    <div class="container">
+        <div class="text-center">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <h1 class="profile-name">{{ user.name if user else 'Your Name' }}</h1>
+            <p class="profile-email">{{ user.email if user else 'abc@example.com' }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <!-- Profile Navigation -->
+            <div class="dashboard-card" data-aos="fade-right" data-aos-delay="0">
+                <div class="list-group list-group-flush">
+                    <a href="#personal-info" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-user me-2"></i>Personal Information
+                    </a>
+                    <a href="#security" class="list-group-item list-group-item-action">
+                        <i class="fas fa-shield-alt me-2"></i>Security
+                    </a>
+                    <a href="#notifications" class="list-group-item list-group-item-action">
+                        <i class="fas fa-bell me-2"></i>Notifications
+                    </a>
+                    <a href="#login-history" class="list-group-item list-group-item-action">
+                        <i class="fas fa-history me-2"></i>Login History
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-trash me-2"></i>Delete Account
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <!-- Personal Information -->
+            <div class="dashboard-card mb-4" id="personal-info" data-aos="fade-left" data-aos-delay="0">
+                <h4 class="mb-4"><i class="fas fa-user me-2"></i>Personal Information</h4>
+                
+                <form action="{{ url_for('profile') }}" method="POST" data-validate="true">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       value="{{ user.name if user else 'Your Name' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email if user else 'abc@example.com' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="+91">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="1990-01-15">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="3">Your Address</textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Security Settings -->
+            <div class="dashboard-card mb-4" id="security" data-aos="fade-left" data-aos-delay="100">
+                <h4 class="mb-4"><i class="fas fa-shield-alt me-2"></i>Security Settings</h4>
+                
+                <form action="{{ url_for('change_password') }}" method="POST" data-validate="true">
+                    <div class="form-group mb-3">
+                        <label for="current_password" class="form-label">Current Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                            <button type="button" class="btn btn-outline-secondary password-toggle">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="new_password" name="new_password" required data-strength="true">
+                            <button type="button" class="btn btn-outline-secondary password-toggle">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength mt-2">
+                            <div class="password-strength-bar"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="confirm_password" class="form-label">Confirm New Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            <button type="button" class="btn btn-outline-secondary password-toggle">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-key me-2"></i>Change Password
+                    </button>
+                </form>
+                
+                <hr class="my-4">
+                
+                <h5 class="mb-3">Two-Factor Authentication</h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-0">Add an extra layer of security to your account</p>
+                        <small class="text-muted">Not enabled</small>
+                    </div>
+                    <button class="btn btn-outline-primary">Enable 2FA</button>
+                </div>
+            </div>
+            
+            <!-- Notification Settings -->
+            <div class="dashboard-card mb-4" id="notifications" data-aos="fade-left" data-aos-delay="200">
+                <h4 class="mb-4"><i class="fas fa-bell me-2"></i>Notification Preferences</h4>
+                
+                <form>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="email_notifications" checked>
+                        <label class="form-check-label" for="email_notifications">
+                            Email Notifications
+                        </label>
+                        <small class="d-block text-muted">Receive updates about your applications via email</small>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="sms_notifications">
+                        <label class="form-check-label" for="sms_notifications">
+                            SMS Notifications
+                        </label>
+                        <small class="d-block text-muted">Receive important alerts via SMS</small>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="marketing_emails" checked>
+                        <label class="form-check-label" for="marketing_emails">
+                            Marketing Emails
+                        </label>
+                        <small class="d-block text-muted">Receive promotional content and tips</small>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="push_notifications" checked>
+                        <label class="form-check-label" for="push_notifications">
+                            Push Notifications
+                        </label>
+                        <small class="d-block text-muted">Receive browser push notifications</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Preferences
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Login History -->
+            <div class="dashboard-card mb-4" id="login-history" data-aos="fade-left" data-aos-delay="300">
+                <h4 class="mb-4"><i class="fas fa-history me-2"></i>Recent Login Activity</h4>
+                
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Device</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2024-01-15 10:30 AM</td>
+                                <td>Chrome on Windows</td>
+                                <td>New York, USA</td>
+                                <td><span class="badge bg-success">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-14 3:45 PM</td>
+                                <td>Safari on iPhone</td>
+                                <td>New York, USA</td>
+                                <td><span class="badge bg-success">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-13 9:15 AM</td>
+                                <td>Firefox on Mac</td>
+                                <td>New York, USA</td>
+                                <td><span class="badge bg-success">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-12 2:30 PM</td>
+                                <td>Chrome on Windows</td>
+                                <td>Unknown</td>
+                                <td><span class="badge bg-danger">Failed</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
