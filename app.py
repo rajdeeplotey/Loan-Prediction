@@ -75,9 +75,10 @@ def login_required(f):
     decorated_function.__name__ = f.__name__
     return decorated_function
 
-# Global variables for model and columns
+# Global variables for model, columns, and scaler
 model = None
 columns = None
+scaler = None
 
 
 def load_model():
@@ -140,6 +141,37 @@ def load_columns():
         return columns
     except Exception as e:
         logger.error(f"Error loading columns: {str(e)}")
+        logger.error(f"Current working directory: {os.getcwd()}")
+        logger.error(f"Script location: {Path(__file__).parent}")
+        raise
+
+
+def load_scaler():
+    """
+    Load the StandardScaler from disk.
+    
+    Returns:
+        StandardScaler: The loaded scaler object
+        
+    Raises:
+        FileNotFoundError: If scaler file doesn't exist
+        Exception: For any other loading errors
+    """
+    global scaler
+    try:
+        # Use absolute path for cross-platform compatibility
+        base_dir = Path(__file__).parent
+        scaler_path = base_dir / 'models' / 'scaler.pkl'
+        
+        if not scaler_path.exists():
+            raise FileNotFoundError(f"Scaler file not found at {scaler_path}")
+        
+        logger.info(f"Loading scaler from: {scaler_path}")
+        scaler = joblib.load(scaler_path)
+        logger.info("Scaler loaded successfully")
+        return scaler
+    except Exception as e:
+        logger.error(f"Error loading scaler: {str(e)}")
         logger.error(f"Current working directory: {os.getcwd()}")
         logger.error(f"Script location: {Path(__file__).parent}")
         raise
@@ -253,13 +285,13 @@ def validate_input(data):
 
 def prepare_input_data(form_data):
     """
-    Prepare input data for prediction using Pandas DataFrame and one-hot encoding.
+    Prepare input data for prediction using the same feature engineering as training.
     
     Args:
         form_data (dict): Dictionary containing form data
         
     Returns:
-        pandas.DataFrame: Prepared DataFrame ready for prediction
+        numpy.ndarray: Prepared array ready for prediction
     """
     try:
         # Convert loan term from years to months
@@ -293,17 +325,37 @@ def prepare_input_data(form_data):
         input_df = pd.DataFrame(input_dict)
         logger.info(f"DataFrame created: {input_df.shape}")
         
-        # Apply one-hot encoding
-        input_df_encoded = pd.get_dummies(input_df, drop_first=False)
-        logger.info(f"After one-hot encoding: {input_df_encoded.shape}, columns: {input_df_encoded.columns.tolist()}")
+        # Apply the SAME feature engineering as training
+        input_df['TotalIncome'] = input_df['ApplicantIncome'] + input_df['CoapplicantIncome']
+        input_df['Income_Loan_Ratio'] = input_df['TotalIncome'] / (input_df['LoanAmount'] + 1)
+        input_df['EMI'] = input_df['LoanAmount'] / input_df['Loan_Amount_Term']
+        input_df['RiskScore'] = input_df['LoanAmount'] / (input_df['TotalIncome'] + 1)
+        
+        logger.info(f"After feature engineering: {input_df.shape}")
+        logger.info(f"Engineered features - TotalIncome: {input_df['TotalIncome'].values[0]}, "
+                   f"Income_Loan_Ratio: {input_df['Income_Loan_Ratio'].values[0]:.4f}, "
+                   f"EMI: {input_df['EMI'].values[0]:.2f}, "
+                   f"RiskScore: {input_df['RiskScore'].values[0]:.4f}")
+        
+        # Encode categorical variables using LabelEncoder (same as training)
+        from sklearn.preprocessing import LabelEncoder
+        le = LabelEncoder()
+        for col in input_df.select_dtypes(include='object').columns:
+            input_df[col] = le.fit_transform(input_df[col])
+        
+        logger.info(f"After encoding: {input_df.shape}, columns: {input_df.columns.tolist()}")
         
         # Reindex to match training columns
-        input_df_encoded = input_df_encoded.reindex(columns=columns, fill_value=0)
-        logger.info(f"After reindexing: {input_df_encoded.shape}")
+        input_df = input_df.reindex(columns=columns, fill_value=0)
+        logger.info(f"After reindexing: {input_df.shape}")
         
-        # Convert to numpy array for faster prediction
-        input_array = input_df_encoded.values
-        logger.info(f"Converted to numpy array: {input_array.shape}")
+        # Apply scaling (same as training)
+        if scaler is not None:
+            input_array = scaler.transform(input_df)
+            logger.info(f"After scaling: {input_array.shape}")
+        else:
+            input_array = input_df.values
+            logger.warning("Scaler not loaded, using unscaled values")
         
         # Validate feature count matches model expectations
         if model is not None and hasattr(model, 'n_features_in_'):
@@ -314,7 +366,7 @@ def prepare_input_data(form_data):
                 logger.error(f"Expected features from model: {expected_features}")
                 logger.error(f"Actual features from input: {actual_features}")
                 logger.error(f"Columns file has: {len(columns)} features")
-                logger.error(f"Input columns: {input_df_encoded.columns.tolist()}")
+                logger.error(f"Input columns: {input_df.columns.tolist()}")
                 raise ValueError(f"Feature count mismatch: Model expects {expected_features} features but input has {actual_features} features")
         
         logger.info(f"Input data prepared successfully. Shape: {input_array.shape}")
@@ -878,13 +930,14 @@ def internal_error(error):
 
 def initialize_app():
     """
-    Initialize the application by loading models and columns.
+    Initialize the application by loading models, columns, and scaler.
     This function is called when the application starts.
     """
     try:
         logger.info("Starting application initialization...")
         load_model()
         load_columns()
+        load_scaler()
         
         # Validate model and columns compatibility
         if model is not None and columns is not None:

@@ -35,6 +35,9 @@ for col in df.select_dtypes(include='object').columns:
 X = df.drop(['Loan_ID', 'Loan_Status'], axis=1)
 y = df['Loan_Status']
 
+# Save column names before scaling
+column_names = X.columns.tolist()
+
 # Split the data
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.20, random_state=42, stratify=y
@@ -55,10 +58,13 @@ rf = RandomForestClassifier(
 )
 rf.fit(X_train, y_train)
 
-# Save the model and scaler
-joblib.dump(rf, "model.pkl")
-joblib.dump(scaler, "scaler.pkl")
+# Save the model, scaler, and columns with correct names
+joblib.dump(rf, "models/loan_model.pkl")
+joblib.dump(scaler, "models/scaler.pkl")
+joblib.dump(column_names, "models/columns.pkl")
 
-print("Model and scaler saved successfully!")
+print("Model, scaler, and columns saved successfully!")
 print(f"Train Accuracy: {rf.score(X_train, y_train):.4f}")
 print(f"Test Accuracy: {rf.score(X_test, y_test):.4f}")
+print(f"Number of features: {len(column_names)}")
+print(f"Feature names: {column_names}")
