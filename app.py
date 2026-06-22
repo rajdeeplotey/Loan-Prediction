@@ -75,10 +75,11 @@ def login_required(f):
     decorated_function.__name__ = f.__name__
     return decorated_function
 
-# Global variables for model, columns, and scaler
+# Global variables for model, columns, scaler, and label encoders
 model = None
 columns = None
 scaler = None
+label_encoders = None
 
 
 def load_model():
@@ -141,6 +142,37 @@ def load_columns():
         return columns
     except Exception as e:
         logger.error(f"Error loading columns: {str(e)}")
+        logger.error(f"Current working directory: {os.getcwd()}")
+        logger.error(f"Script location: {Path(__file__).parent}")
+        raise
+
+
+def load_label_encoders():
+    """
+    Load the LabelEncoders from disk.
+    
+    Returns:
+        dict: Dictionary of LabelEncoders for each categorical column
+        
+    Raises:
+        FileNotFoundError: If label encoders file doesn't exist
+        Exception: For any other loading errors
+    """
+    global label_encoders
+    try:
+        # Use absolute path for cross-platform compatibility
+        base_dir = Path(__file__).parent
+        le_path = base_dir / 'models' / 'label_encoders.pkl'
+        
+        if not le_path.exists():
+            raise FileNotFoundError(f"Label encoders file not found at {le_path}")
+        
+        logger.info(f"Loading label encoders from: {le_path}")
+        label_encoders = joblib.load(le_path)
+        logger.info(f"Label encoders loaded successfully for columns: {list(label_encoders.keys())}")
+        return label_encoders
+    except Exception as e:
+        logger.error(f"Error loading label encoders: {str(e)}")
         logger.error(f"Current working directory: {os.getcwd()}")
         logger.error(f"Script location: {Path(__file__).parent}")
         raise
@@ -337,11 +369,21 @@ def prepare_input_data(form_data):
                    f"EMI: {input_df['EMI'].values[0]:.2f}, "
                    f"RiskScore: {input_df['RiskScore'].values[0]:.4f}")
         
-        # Encode categorical variables using LabelEncoder (same as training)
-        from sklearn.preprocessing import LabelEncoder
-        le = LabelEncoder()
-        for col in input_df.select_dtypes(include='object').columns:
-            input_df[col] = le.fit_transform(input_df[col])
+        # Encode categorical variables using the SAME LabelEncoders from training
+        if label_encoders is not None:
+            for col in input_df.select_dtypes(include='object').columns:
+                if col in label_encoders:
+                    input_df[col] = label_encoders[col].transform(input_df[col])
+                    logger.info(f"Encoded {col} using saved LabelEncoder")
+                else:
+                    logger.warning(f"No LabelEncoder found for {col}, using default encoding")
+                    le = LabelEncoder()
+                    input_df[col] = le.fit_transform(input_df[col])
+        else:
+            logger.warning("Label encoders not loaded, using new LabelEncoder (may cause incorrect predictions)")
+            le = LabelEncoder()
+            for col in input_df.select_dtypes(include='object').columns:
+                input_df[col] = le.fit_transform(input_df[col])
         
         logger.info(f"After encoding: {input_df.shape}, columns: {input_df.columns.tolist()}")
         
@@ -765,11 +807,16 @@ def predict():
         # Prepare input data using Pandas DataFrame and one-hot encoding
         input_df = prepare_input_data(form_data)
         
-        # Make prediction
-        prediction = model.predict(input_df)[0]
-        
-        # Get prediction probabilities
+        # Make prediction with adjusted threshold for less conservative decisions
         prediction_proba = model.predict_proba(input_df)[0]
+        
+        # Use a lower threshold for approval (0.35 instead of 0.5) to be less conservative
+        approval_threshold = 0.35
+        if prediction_proba[1] >= approval_threshold:
+            prediction = 1
+        else:
+            prediction = 0
+        
         confidence = max(prediction_proba) * 100  # Convert to percentage
         
         # Determine risk level
@@ -930,7 +977,7 @@ def internal_error(error):
 
 def initialize_app():
     """
-    Initialize the application by loading models, columns, and scaler.
+    Initialize the application by loading models, columns, scaler, and label encoders.
     This function is called when the application starts.
     """
     try:
@@ -938,6 +985,7 @@ def initialize_app():
         load_model()
         load_columns()
         load_scaler()
+        load_label_encoders()
         
         # Validate model and columns compatibility
         if model is not None and columns is not None:
