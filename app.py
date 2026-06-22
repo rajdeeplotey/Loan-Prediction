@@ -335,6 +335,13 @@ def prepare_input_data(form_data):
         coapplicant_income = float(form_data.get('coapplicant_income', 0))
         loan_amount = float(form_data.get('loan_amount', 0))
         
+        # CRITICAL FIX: Convert LoanAmount from website input to training scale
+        # Training data uses LoanAmount in thousands (e.g., 100 = 100,000)
+        # Website sends LoanAmount in actual currency (e.g., 500000)
+        # Convert by dividing by 1000
+        loan_amount_scaled = loan_amount / 1000.0
+        logger.info(f"Loan Amount Conversion: {loan_amount} -> {loan_amount_scaled} (divided by 1000)")
+        
         # Create a dictionary with the exact column names expected by the model
         # These should match the training data column names
         input_dict = {
@@ -345,13 +352,14 @@ def prepare_input_data(form_data):
             'Self_Employed': [form_data.get('self_employed', 'No')],
             'ApplicantIncome': [applicant_income],
             'CoapplicantIncome': [coapplicant_income],
-            'LoanAmount': [loan_amount],
+            'LoanAmount': [loan_amount_scaled],  # Use scaled value
             'Loan_Amount_Term': [float(loan_term_months)],
             'Credit_History': [int(form_data.get('credit_history', 1))],
             'Property_Area': [form_data.get('property_area', 'Urban')]
         }
         
-        logger.info(f"Input dict: {input_dict}")
+        logger.info(f"Raw Form Inputs: {form_data}")
+        logger.info(f"Input dict (with scaled LoanAmount): {input_dict}")
         
         # Create DataFrame
         input_df = pd.DataFrame(input_dict)
@@ -386,15 +394,18 @@ def prepare_input_data(form_data):
                 input_df[col] = le.fit_transform(input_df[col])
         
         logger.info(f"After encoding: {input_df.shape}, columns: {input_df.columns.tolist()}")
+        logger.info(f"Encoded values: {input_df.values[0].tolist()}")
         
         # Reindex to match training columns
         input_df = input_df.reindex(columns=columns, fill_value=0)
         logger.info(f"After reindexing: {input_df.shape}")
+        logger.info(f"Feature vector before scaling: {input_df.values[0].tolist()}")
         
         # Apply scaling (same as training)
         if scaler is not None:
             input_array = scaler.transform(input_df)
             logger.info(f"After scaling: {input_array.shape}")
+            logger.info(f"Scaled feature vector: {input_array[0].tolist()}")
         else:
             input_array = input_df.values
             logger.warning("Scaler not loaded, using unscaled values")
@@ -810,14 +821,23 @@ def predict():
         # Make prediction using the model directly
         prediction_proba = model.predict_proba(input_df)[0]
         
+        # Add debug logging for prediction
+        logger.info(f"Model classes: {model.classes_}")
+        logger.info(f"Prediction probabilities: {prediction_proba}")
+        logger.info(f"Probability for class 0 (Rejected): {prediction_proba[0]:.4f}")
+        logger.info(f"Probability for class 1 (Approved): {prediction_proba[1]:.4f}")
+        
         # Use the model's prediction with standard threshold (0.50)
         approval_threshold = 0.50
         if prediction_proba[1] >= approval_threshold:
             prediction = 1
+            logger.info(f"Prediction: {prediction} (Approved) - Probability {prediction_proba[1]:.4f} >= threshold {approval_threshold}")
         else:
             prediction = 0
+            logger.info(f"Prediction: {prediction} (Rejected) - Probability {prediction_proba[1]:.4f} < threshold {approval_threshold}")
         
         confidence = max(prediction_proba) * 100  # Convert to percentage
+        logger.info(f"Confidence: {confidence:.2f}%")
         
         # Determine risk level
         risk_level = determine_risk_level(confidence)
