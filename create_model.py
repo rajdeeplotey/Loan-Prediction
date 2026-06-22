@@ -50,12 +50,12 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-# Train Random Forest model with adjusted parameters for better balance
+# Train Random Forest model with simpler parameters to reduce feature dominance
 rf = RandomForestClassifier(
-    n_estimators=300,  # Increase number of trees
-    max_depth=15,  # Increase depth
-    min_samples_split=3,  # Reduce min samples split
-    min_samples_leaf=1,  # Reduce min samples leaf
+    n_estimators=100,  # Reduce number of trees
+    max_depth=8,  # Reduce depth
+    min_samples_split=10,  # Increase min samples split
+    min_samples_leaf=4,  # Increase min samples leaf
     random_state=42,
     class_weight='balanced'  # Add class weights to handle imbalance
 )

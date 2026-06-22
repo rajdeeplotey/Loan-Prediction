@@ -807,15 +807,38 @@ def predict():
         # Prepare input data using Pandas DataFrame and one-hot encoding
         input_df = prepare_input_data(form_data)
         
-        # Make prediction with adjusted threshold for less conservative decisions
+        # Make prediction with adjusted threshold for balanced decisions
         prediction_proba = model.predict_proba(input_df)[0]
         
-        # Use a lower threshold for approval (0.35 instead of 0.5) to be less conservative
-        approval_threshold = 0.35
-        if prediction_proba[1] >= approval_threshold:
-            prediction = 1
-        else:
+        # Calculate financial ratios for rule-based assessment
+        applicant_income = float(form_data.get('applicant_income', 0))
+        coapplicant_income = float(form_data.get('coapplicant_income', 0))
+        loan_amount = float(form_data.get('loan_amount', 0))
+        loan_term_months = int(form_data.get('loan_term_years', 30)) * 12
+        
+        total_income = applicant_income + coapplicant_income
+        monthly_emi = loan_amount / loan_term_months
+        debt_to_income_ratio = monthly_emi / (total_income / 12) if total_income > 0 else 999
+        loan_to_income_ratio = loan_amount / total_income if total_income > 0 else 999
+        
+        logger.info(f"Financial ratios - DTI: {debt_to_income_ratio:.2f}, LTI: {loan_to_income_ratio:.2f}")
+        
+        # Apply financial rules to override model prediction if necessary
+        # Rule 1: If debt-to-income ratio is too high (> 50%), reject regardless of model
+        if debt_to_income_ratio > 0.50:
+            logger.warning(f"Rejecting due to high debt-to-income ratio: {debt_to_income_ratio:.2f}")
             prediction = 0
+        # Rule 2: If loan-to-income ratio is too high (> 10), reject regardless of model
+        elif loan_to_income_ratio > 10:
+            logger.warning(f"Rejecting due to high loan-to-income ratio: {loan_to_income_ratio:.2f}")
+            prediction = 0
+        # Rule 3: If financial ratios are healthy, use model prediction with adjusted threshold
+        else:
+            approval_threshold = 0.30
+            if prediction_proba[1] >= approval_threshold:
+                prediction = 1
+            else:
+                prediction = 0
         
         confidence = max(prediction_proba) * 100  # Convert to percentage
         
